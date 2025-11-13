@@ -1,2 +1,2 @@
 # wordle-cli
-Wordle that runs on terminal
+Game has the same rules as wordle, but works on terminal

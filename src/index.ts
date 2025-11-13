@@ -52,11 +52,9 @@ class Wordle  {
             let color : ColorStatus
             if (letter == this.finalWord[i]) {
                 color = 'green'
-            }
-            else if (this.finalWord.includes(letter)) {
+            } else if (this.finalWord.includes(letter)) {
                 color = 'yellow'
-            }
-            else {
+            } else {
                 color = 'red'
             }
 
