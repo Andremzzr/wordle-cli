@@ -1,6 +1,26 @@
 import chalk from "chalk"
 import readline from "readline/promises";
 
+
+const WORD_API_URL = "https://random-word-api.herokuapp.com/word"
+
+type WordAPIResponse = Array<string>
+
+class APIService {
+    url: string
+
+    constructor(url:string) { 
+        this.url=url;
+    }
+
+
+    async fetchData(): Promise<string>  { 
+        const response = await fetch(this.url);
+        const data:  WordAPIResponse = await response.json();
+
+        return data[0]
+    }
+}
 const colors = {
     green: chalk.green,
     yellow: chalk.yellow,
@@ -16,17 +36,24 @@ type LetterObject = {
 }
 
 class Wordle  {
-    finalWord: AnswerObject; 
+    finalWord: AnswerObject = {}; 
     attempts: number;
     currentAttempt: number = 1;
+    wordService: APIService
 
     constructor(attemts: number) {
-        this.finalWord = this.stringToCharIndexMap(this.generateWord());
+        this.wordService = new APIService(WORD_API_URL)
         this.attempts = attemts;
     }
 
-    generateWord(): string {
-        return 'read'
+    async getWord() {
+        const word = await this.generateWord();
+        console.log(word)
+        this.finalWord = this.stringToCharIndexMap(word);
+    }
+
+    private async generateWord(): Promise<string> {
+        return await this.wordService.fetchData();
     }
 
     answer(answer: string): boolean {
@@ -106,7 +133,7 @@ class Client  {
         try {
             console.log("\nWordle CLI started");
             console.log("Type your guess:");
-            while (game.validAnswer()) {
+            while (this.game.validAnswer()) {
                 const message = await rl.question("\nAttempt: ");
                 if (message.toLowerCase() === "quit") {
                     break;
@@ -120,10 +147,10 @@ class Client  {
 
 }
 
-const game = new Wordle(3)
-
 
 async function main() {
+    const game = new Wordle(3)
+    await game.getWord();
     const client = new Client(game)
     client.chatLoop()    
 }
