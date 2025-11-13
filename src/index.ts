@@ -9,19 +9,19 @@ const colors = {
 
 
 type ColorStatus = 'green'|'red'|'yellow'
-
+type AnswerObject = { [key: string]: number[] }
 type LetterObject = {
     letter: string
     color: ColorStatus
 }
 
 class Wordle  {
-    finalWord: string; 
+    finalWord: AnswerObject; 
     attempts: number;
     currentAttempt: number = 1;
 
     constructor(attemts: number) {
-        this.finalWord = this.generateWord();
+        this.finalWord = this.stringToCharIndexMap(this.generateWord());
         this.attempts = attemts;
     }
 
@@ -38,6 +38,20 @@ class Wordle  {
         return true
     }
 
+    stringToCharIndexMap(inputString: string): { [key: string]: number[] } {
+        const charIndexMap: { [key: string]: number[] } = {};
+
+        for (let i = 0; i < inputString.length; i++) {
+            const char = inputString[i];
+            if (charIndexMap[char]) {
+            charIndexMap[char].push(i);
+            } else {
+            charIndexMap[char] = [i];
+            }
+        }
+
+        return charIndexMap;
+    }
 
     validAnswer(): boolean {
         return this.currentAttempt <= this.attempts
@@ -50,13 +64,20 @@ class Wordle  {
         for (let i = 0; i < answer.length; i++) {
             const letter = answer[i];
             let color : ColorStatus
-            if (letter == this.finalWord[i]) {
-                color = 'green'
-            } else if (this.finalWord.includes(letter)) {
+
+            if (this.finalWord[letter]) {
                 color = 'yellow'
+                for (const index of this.finalWord[letter]) {
+                    if(index == i) {
+                        color = 'green'
+                    } else if (result.filter(o => o.letter == letter && o.color == 'green').length == this.finalWord[letter].length) {
+                        color = 'red'
+                    }
+                }
             } else {
                 color = 'red'
             }
+
 
             result.push( {
                 letter,
