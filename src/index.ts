@@ -1,4 +1,5 @@
 import chalk from "chalk"
+import readline from "readline/promises";
 
 const colors = {
     green: chalk.green,
@@ -28,10 +29,18 @@ class Wordle  {
         return 'read'
     }
 
-    answer (answer: string) {
+    answer(answer: string): boolean {
+        if(!this.validAnswer()) return false
         const response = this.checkAnswer(answer);
+        const colorfulWord = response.map((l, i) => colors[l.color](l.letter)).join("");
+        console.log(colorfulWord)
+        this.currentAttempt++;
+        return true
+    }
 
-        
+
+    validAnswer(): boolean {
+        return this.currentAttempt <= this.attempts
     }
 
     checkAnswer(answer:string): Array<LetterObject> {
@@ -61,3 +70,43 @@ class Wordle  {
     }
 
 }
+
+
+class Client  {
+    game: Wordle
+    constructor (game: Wordle) {
+        this.game = game;
+    }
+
+    async chatLoop() {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+
+        try {
+            console.log("\nWordle CLI started");
+            console.log("Type your guess:");
+            while (game.validAnswer()) {
+                const message = await rl.question("\nAttempt: ");
+                if (message.toLowerCase() === "quit") {
+                    break;
+                }
+                this.game.answer(message);
+            }
+        } finally {
+            rl.close();
+        }
+    }
+
+}
+
+const game = new Wordle(3)
+
+
+async function main() {
+    const client = new Client(game)
+    client.chatLoop()    
+}
+
+main();
