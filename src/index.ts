@@ -2,7 +2,7 @@ import chalk from "chalk"
 import readline from "readline/promises";
 
 
-const WORD_API_URL = "https://random-word-api.herokuapp.com/word"
+const WORD_API_URL = "https://random-word-api.vercel.app/api?words=1"
 
 type WordAPIResponse = Array<string>
 
@@ -36,20 +36,21 @@ type LetterObject = {
 }
 
 class Wordle  {
-    finalWord: AnswerObject = {}; 
-    attempts: number;
+    finalWord : string = '';
+    finalWordObject: AnswerObject = {}; 
+    maxAttempts: number;
     currentAttempt: number = 1;
     wordService: APIService
 
     constructor(attemts: number) {
         this.wordService = new APIService(WORD_API_URL)
-        this.attempts = attemts;
+        this.maxAttempts = attemts;
     }
 
-    async getWord() {
-        const word = await this.generateWord();
-        console.log(word)
-        this.finalWord = this.stringToCharIndexMap(word);
+    async getWord() {              
+        this.finalWord = await this.generateWord(); 
+        console.log(this.finalWord)
+        this.finalWordObject = this.stringToCharIndexMap(this.finalWord);
     }
 
     private async generateWord(): Promise<string> {
@@ -62,6 +63,10 @@ class Wordle  {
         const colorfulWord = response.map((l, i) => colors[l.color](l.letter)).join("");
         console.log(colorfulWord)
         this.currentAttempt++;
+        if(answer == this.finalWord) {
+            console.log("Good job! You guessed the word!");
+            this.currentAttempt = this.maxAttempts + 1
+        }
         return true
     }
 
@@ -81,7 +86,7 @@ class Wordle  {
     }
 
     validAnswer(): boolean {
-        return this.currentAttempt <= this.attempts
+        return this.currentAttempt <= this.maxAttempts
     }
 
     checkAnswer(answer:string): Array<LetterObject> {
@@ -92,12 +97,12 @@ class Wordle  {
             const letter = answer[i];
             let color : ColorStatus
 
-            if (this.finalWord[letter]) {
+            if (this.finalWordObject[letter]) {
                 color = 'yellow'
-                for (const index of this.finalWord[letter]) {
+                for (const index of this.finalWordObject[letter]) {
                     if(index == i) {
                         color = 'green'
-                    } else if (result.filter(o => o.letter == letter && o.color == 'green').length == this.finalWord[letter].length) {
+                    } else if (result.filter(o => o.letter == letter && o.color == 'green').length == this.finalWordObject[letter].length) {
                         color = 'red'
                     }
                 }
@@ -140,6 +145,7 @@ class Client  {
                 }
                 this.game.answer(message);
             }
+            
         } finally {
             rl.close();
         }
@@ -152,6 +158,7 @@ async function main() {
     const game = new Wordle(3)
     await game.getWord();
     const client = new Client(game)
+
     client.chatLoop()    
 }
 
