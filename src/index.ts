@@ -1,6 +1,4 @@
 import chalk from "chalk"
-import readline from "readline/promises";
-
 
 const WORD_API_URL = "https://random-word-api.vercel.app/api?words=1"
 
@@ -129,25 +127,69 @@ class Client  {
         this.game = game;
     }
 
-    async chatLoop() {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
+    async typeAnswer(maxChar: number): Promise<string> {
+        return new Promise((resolve) => {
+            let buffer: string[] = [];
+
+            const stdin = process.stdin;
+            stdin.setRawMode(true);
+            stdin.resume();
+            stdin.setEncoding("utf8");
+
+
+            const handler = (key: string) => {
+                    // Exit on Ctrl+C
+                if (key === "\u0003") process.exit();
+
+                // ENTER → finish
+                if (key === "\r") {
+                    stdin.setRawMode(false);
+                    stdin.pause();
+                    stdin.removeListener("data", handler);   // 🔥 FIX
+                    return resolve(buffer.join(""));
+                }
+
+                // BACKSPACE
+                if (key === "\u0008" || key === "\u007F") {
+                    if (buffer.length > 0) {
+                        buffer.pop();
+                        process.stdout.write("\b \b");
+                    }
+                    return;
+                }
+
+                // Accept letters only
+                if (/^[a-zA-Z]$/.test(key)) {
+                    if (buffer.length < maxChar) {
+                        buffer.push(key);
+                        process.stdout.write(key);
+                    }
+                    return;
+                }
+
+            }
+
+            stdin.on("data", handler)
         });
+    }
+
+
+    async chatLoop() {
 
         try {
             console.log("\nWordle CLI started");
             console.log("Type your guess:");
             while (this.game.validAnswer()) {
-                const message = await rl.question("\nAttempt: ");
+                const message = await this.typeAnswer(this.game.finalWord.length);
                 if (message.toLowerCase() === "quit") {
                     break;
                 }
+                console.log('\n')
                 this.game.answer(message);
             }
             
-        } finally {
-            rl.close();
+        } catch (err) {
+            console.log(err)
         }
     }
 
@@ -163,3 +205,7 @@ async function main() {
 }
 
 main();
+
+
+
+
